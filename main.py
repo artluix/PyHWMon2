@@ -8,7 +8,7 @@ cpu_freq_table = []
 cpu_temp_table = []
 cpu_usage_table = []
 gpu_freq_row = []
-hdd_temp_str = []
+hdd_temp_row = []
 
 
 
@@ -16,11 +16,11 @@ def main():
     while 1:
         #cpu_t = cpu_temperature()
         #cpu_f = cpu_frequency()
-        #hdd_t = hdd_temperature()
+        hdd_t = hdd_temperature()
         #gpu_f = gpu_frequency()
         #print(cpu_t)
         #print(cpu_f)
-        #print(hdd_t)
+        print(hdd_t)
         #print(gpu_f)
         time.sleep(INTERVAL)
 
@@ -33,11 +33,14 @@ def max_list(list_1, list_2):
     return [max(a, b) for a, b in zip(list_1, list_2)]
 
 
-def cpu_temperature():
-    # Indexes:  0 - Physical Id 0
-    #           1 - Core 0
-    #           2 - Core 1
 
+# ----------------------------------------   Indexes:   0 - Physical Id 0   --------------------------------
+# ----------------------------------------              1 - Core 0          --------------------------------
+# ----------------------------------------              2 - Core 1          --------------------------------
+
+
+
+def cpu_temperature():
     path = '/sys/class/hwmon/hwmon0/temp[0-9]_'
 
     temp_row = []
@@ -61,15 +64,10 @@ def cpu_temperature():
     s = 'CPU temperature [Cur   Min    Max]\n'
     for l, temp_str in zip(temp_label, zip(*cpu_temp_table)):
         s += str(l).ljust(16) + '   '.join(str(x) + '°C' for x in temp_str)	+ '\n'
-
     return s
 
 
 def cpu_frequency():
-    # Indexes: 	0 - current
-    # 		   	1 - min
-    #			2 - max
-
     path = '/sys/devices/system/cpu/cpu[0-9]/cpufreq/cpuinfo_cur_freq'
 
     freq_row = []
@@ -88,7 +86,6 @@ def cpu_frequency():
     s = 'CPU frequency [Cur      Min       Max]\n'
     for i, freq_str in enumerate(zip(*cpu_freq_table)):
         s += 'Core' + str(i).ljust(10) + '   '.join(str(x) + 'MHz' for x in freq_str) + '\n'
-
     return s
 
 
@@ -96,11 +93,7 @@ def cpu_usage():
     pass
 
 
-def gpu_frequency():
-    # Indexes:  0 - current
-    #           1 - min
-    #           2 - max
-    
+def gpu_frequency():   
     path = '/sys/class/drm/card0/gt_cur_freq_mhz'
 
     freq_cur = 0
@@ -115,19 +108,21 @@ def gpu_frequency():
         gpu_freq_row[1] = min(freq_cur, gpu_freq_row[1])
         gpu_freq_row[2] = max(freq_cur, gpu_freq_row[2])
 
-<<<<<<< a718309ae174afea608e281fd3e2233489b8a676
     s = 'GPU frequency [Cur,    Min,     Max]\n' + 'GPU'.ljust(14) + '   '.join(str(x) + 'MHz' for x in gpu_freq_row) + '\n'
-=======
-    s = 'GPU frequency [Cur,    Min,     Max]\n' q+ 'GPU'.ljust(14) + '   '.join(str(x) + 'MHz' for x in gpu_freq_row) + '\n'
->>>>>>> Add max/min values for all sensors
-
     return s
 
 
 def hdd_temperature():
-    t = int(subprocess.check_output(['hddtemp', '/dev/sda', '-n']))
-    s = 'HDD temperature:\n' + str(t) + '°C'
+    temp_cur = int(subprocess.check_output(['hddtemp', '/dev/sda', '-n']))
+    global hdd_temp_row
+    if not hdd_temp_row:
+            hdd_temp_row = [temp_cur] * 3
+    else:
+        hdd_temp_row[0] = temp_cur
+        hdd_temp_row[1] = min(temp_cur, hdd_temp_row[1])
+        hdd_temp_row[2] = max(temp_cur, hdd_temp_row[2])
 
+    s = 'HDD temperature [Cur   Min    Max]\n' + 'HDD'.ljust(16) + '   '.join(str(x) + '°C' for x in hdd_temp_row) + '\n'
     return s
 
 
