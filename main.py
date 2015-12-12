@@ -9,21 +9,26 @@ cpu_temp_table = []
 cpu_usage_table = []
 gpu_freq_row = []
 hdd_temp_row = []
-
+bat_voltage_row = []
+bat_charge_row = []
 
 
 def main():
     while 1:
         #cpu_t = cpu_temperature()
         #cpu_f = cpu_frequency()
-        cpu_u = cpu_usage()
+        #cpu_u = cpu_usage()
         #hdd_t = hdd_temperature()
         #gpu_f = gpu_frequency()
+        #bat_v = bat_voltage()
+        bat_c = bat_charge()
         #print(cpu_t)
         #print(cpu_f)
-        print(cpu_usage())
+        #print(cpu_usage())
         #print(hdd_t)
         #print(gpu_f)
+        #print(bat_v)
+        print(bat_c)
         time.sleep(INTERVAL)
 
 
@@ -163,8 +168,43 @@ def hdd_temperature():
     return s
 
 
-def battery_status():
-    pass
+def bat_voltage():
+    path = '/sys/class/power_supply/BAT1/voltage_now'
+    
+    voltage_cur = 0
+    with open(path, 'r') as f:
+        voltage_cur = int(f.readline()) / 1000000
+
+    global bat_voltage_row
+    if not bat_voltage_row:
+        bat_voltage_row = [voltage_cur] * 3
+    else:
+        bat_voltage_row[0] = voltage_cur
+        bat_voltage_row[1] = min(voltage_cur, bat_voltage_row[1])
+        bat_voltage_row[2] = max(voltage_cur, bat_voltage_row[2])
+
+    s = 'Battery voltage [Cur     Min      Max]\n' + 'BAT'.ljust(16) + '   '.join('{:.2f}V'.format(x) for x in bat_voltage_row) + '\n'
+    return s
+
+
+def bat_charge():
+    charge_filenames = ('now', 'full', 'full_design')
+
+    path = '/sys/class/power_supply/BAT1/charge_'
+    
+    global bat_charge_row   
+    if not bat_charge_row:
+        for filename in charge_filenames:
+            with open(path + filename) as f:
+                bat_charge_row.append(int(int(f.readline()) / 1000))
+    else:
+        for i, filename in enumerate(charge_filenames[0:1]):
+            with open(path + filename) as f:
+                bat_charge_row[i] = int(int(f.readline()) / 1000)
+
+    s = 'Battery charge [Cur      Full      Full Design]\n' + 'BAT'.ljust(15) + '   '.join(str(x) + 'mAh' for x in bat_charge_row) + '\n'
+    return s    
+
 
 if __name__ == '__main__':
     main()
