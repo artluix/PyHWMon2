@@ -16,29 +16,30 @@ bat_charge_row = []
 
 
 def main():
-    #while 1:
+    while 1:
         #os.system('clear')
-        #cpu_t = cpu_temperature()
-        #cpu_f = cpu_frequency()
-        #cpu_u = cpu_usage()
-        #hdd_t = hdd_temperature()
-        #gpu_f = gpu_frequency()
-        #bat_v = bat_voltage()
-        #bat_c = bat_charge()
-        #print(cpu_t)
-        #print(cpu_f)
-        #print(cpu_usage())
-        #print(hdd_t)
-        #print(gpu_f)
-        #print(bat_v)
-        #print(bat_c)
-        #time.sleep(INTERVAL)
-    cpu_n = cpu_name()
-    gpu_n = gpu_name()
-    hdd_n = hdd_name()
-    print(cpu_n)
-    print(gpu_n)
-    print(hdd_n)
+        cpu_t = cpu_temperature()
+        cpu_f = cpu_frequency()
+        cpu_u = cpu_usage()
+        hdd_t = hdd_temperature()
+        gpu_f = gpu_frequency()
+        bat_v = bat_voltage()
+        bat_c = bat_charge()
+        print('-' * 80)
+        print(cpu_name_str)
+        print(cpu_t)
+        print(cpu_f)
+        print(cpu_u + '\n')
+        print('-' * 80)
+        print(gpu_name_str)
+        print(gpu_f + '\n')
+        print('-' * 80)
+        print(hdd_name_str)
+        print(hdd_t + '\n')
+        print('-' * 80)
+        print(bat_v)
+        print(bat_c)
+        time.sleep(INTERVAL)
 
 
 def min_row(list_1, list_2):
@@ -172,7 +173,8 @@ def gpu_frequency():
         gpu_freq_row[1] = min(freq_cur, gpu_freq_row[1])
         gpu_freq_row[2] = max(freq_cur, gpu_freq_row[2])
 
-    s = 'GPU frequency [Cur      Min       Max]\n' + 'GPU'.ljust(14) + '   '.join(str(x) + ' MHz' for x in gpu_freq_row) + '\n'
+
+    s = 'GPU frequency [Cur      Min       Max]\n' + ''.ljust(14) + '   '.join(str(x) + ' MHz' for x in gpu_freq_row) + '\n'
     return s
 
 
@@ -186,7 +188,7 @@ def hdd_temperature():
         hdd_temp_row[1] = min(temp_cur, hdd_temp_row[1])
         hdd_temp_row[2] = max(temp_cur, hdd_temp_row[2])
 
-    s = 'HDD temperature [Cur    Min     Max]\n' + 'HDD'.ljust(16) + '   '.join(str(x) + ' °C' for x in hdd_temp_row) + '\n'
+    s = 'HDD temperature [Cur    Min     Max]\n' + ''.ljust(16) + '   '.join(str(x) + ' °C' for x in hdd_temp_row) + '\n'
     return s
 
 
@@ -205,7 +207,7 @@ def bat_voltage():
         bat_voltage_row[1] = min(voltage_cur, bat_voltage_row[1])
         bat_voltage_row[2] = max(voltage_cur, bat_voltage_row[2])
 
-    s = 'Battery voltage [Cur      Min       Max]\n' + 'BAT'.ljust(16) + '   '.join('{:.2f} V'.format(x) for x in bat_voltage_row) + '\n'
+    s = 'Battery voltage [Cur      Min       Max]\n' + ''.ljust(16) + '   '.join('{:.2f} V'.format(x) for x in bat_voltage_row) + '\n'
     return s
 
 
@@ -224,8 +226,15 @@ def bat_charge():
             with open(path + filename) as f:
                 bat_charge_row[i] = int(int(f.readline()) / 1000)
 
-    s = 'Battery charge [Cur       Full       Full Design]\n' + 'BAT'.ljust(15) + '   '.join(str(x) + ' mWh' for x in bat_charge_row) + '\n'
+    header_str = 'Battery charge [Cur       Full       Full Design]\n'
+    s = header_str + ''.ljust(15) + '   '.join(str(x) + ' mWh' for x in bat_charge_row) + '\n'
     return s    
+
+
+cpu_name_str = cpu_name()
+gpu_name_str = gpu_name()
+hdd_name_str = hdd_name()
+
 
 #TODO:
 #   1: Add Hardware info from dmidecode
