@@ -16,23 +16,29 @@ bat_charge_row = []
 
 
 def main():
-    while 1:
-        os.system('clear')
-        cpu_t = cpu_temperature()
-        cpu_f = cpu_frequency()
-        cpu_u = cpu_usage()
-        hdd_t = hdd_temperature()
-        gpu_f = gpu_frequency()
-        bat_v = bat_voltage()
-        bat_c = bat_charge()
-        print(cpu_t)
-        print(cpu_f)
-        print(cpu_usage())
-        print(hdd_t)
-        print(gpu_f)
-        print(bat_v)
-        print(bat_c)
-        time.sleep(INTERVAL)
+    #while 1:
+        #os.system('clear')
+        #cpu_t = cpu_temperature()
+        #cpu_f = cpu_frequency()
+        #cpu_u = cpu_usage()
+        #hdd_t = hdd_temperature()
+        #gpu_f = gpu_frequency()
+        #bat_v = bat_voltage()
+        #bat_c = bat_charge()
+        #print(cpu_t)
+        #print(cpu_f)
+        #print(cpu_usage())
+        #print(hdd_t)
+        #print(gpu_f)
+        #print(bat_v)
+        #print(bat_c)
+        #time.sleep(INTERVAL)
+    cpu_n = cpu_name()
+    gpu_n = gpu_name()
+    hdd_n = hdd_name()
+    print(cpu_n)
+    print(gpu_n)
+    print(hdd_n)
 
 
 def min_row(list_1, list_2):
@@ -48,6 +54,9 @@ def max_row(list_1, list_2):
 # ----------------------------------------              1 - Core 0          --------------------------------
 # ----------------------------------------              2 - Core 1          --------------------------------
 
+def cpu_name():
+    cpu_name_str = subprocess.check_output('lscpu | grep \'Model name\'', shell = True).decode()
+    return cpu_name_str.split(':')[1].lstrip(' ')
 
 
 def cpu_temperature():
@@ -138,6 +147,16 @@ def cpu_usage():
     return s
 
 
+def gpu_name():
+    gpu_name_str = subprocess.check_output('lspci | grep \'VGA\'', shell = True).decode()
+    return gpu_name_str.split('VGA')[1].split(':')[1].lstrip(' ')
+
+
+def hdd_name():
+    hdd_name_str = subprocess.check_output('hdparm -I /dev/sda | grep \'Model Number\'', shell=True).decode()
+    return hdd_name_str.split(':')[1].lstrip(' ')
+
+
 def gpu_frequency():   
     path = '/sys/class/drm/card0/gt_cur_freq_mhz'
 
@@ -210,7 +229,7 @@ def bat_charge():
 
 #TODO:
 #   1: Add Hardware info from dmidecode
-#   2: Add name for CPU, GPU to Monitor
+#   2: Add name for CPU, GPU to Monitor (Done + )
 #   3: Add GUI
 #   4: Add Threads
 
