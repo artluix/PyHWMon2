@@ -1,6 +1,7 @@
 from gi import require_version
 require_version('Gtk', '3.0')
 
+
 from gi.repository import Gtk, GObject
 import threading
 import subprocess
@@ -9,6 +10,7 @@ import glob
 
 
 INTERVAL = 0.5
+
 
 def min_row(list_1, list_2):
     return [min(a, b) for a, b in zip(list_1, list_2)]
@@ -55,6 +57,7 @@ class Cpu:
 
 
     def get_temperature(self):
+        self.__temperature()
         return self.temp_table
 
     def get_temp_labels(self):
@@ -62,6 +65,7 @@ class Cpu:
 
 
     def get_frequency(self):
+        self.__frequency()
         return self.freq_table
 
     def get_freq_labels(self):
@@ -69,6 +73,7 @@ class Cpu:
 
 
     def get_usage(self):
+        self.__usage()
         return self.usage_table
 
     def get_usage_labels(self):
@@ -95,7 +100,7 @@ class Cpu:
             with open(filename, 'r') as f:
                 temp_row.append(int(int(f.readline()) / 1000))
         
-        if not cpu_temp_table:
+        if not self.temp_table:
             self.temp_table = [temp_row] * 3
         else:
             self.temp_table[0] = temp_row
@@ -134,7 +139,7 @@ class Cpu:
 
         def delta_times():
             times_1 = get_times()
-            time.sleep(INTERVAL)
+            time.sleep(INTERVAL / 3)
             times_2 = get_times()
             return [[(t2 - t1) for t1, t2 in zip(t1_row, t2_row)] for t1_row, t2_row in zip(times_1, times_2)]
 
@@ -175,6 +180,7 @@ class Gpu:
         return self.freq_label
 
     def get_frequency(self):
+        self.__frequency()
         return self.freq_row
 
 
@@ -213,6 +219,7 @@ class Hdd:
         return self.temp_label
 
     def get_temperature(self):
+        self.__temperature()
         return self.temp_row
 
 
@@ -250,6 +257,7 @@ class Battery:
         return self.voltage_label
 
     def get_voltage(self):
+        self.__voltage()
         return self.voltage_row
 
 
@@ -260,6 +268,7 @@ class Battery:
         return self.charge_label
 
     def get_charge(self):
+        self.__charge()
         return self.charge_row
 
 
@@ -322,6 +331,21 @@ class MyWindow(Gtk.Window):
             column = Gtk.TreeViewColumn(columns[i], renderer, text=i)
             self.treeview.append_column(column)
 
+        self.__add_nodes_to_treeview()
+        self.treeview.expand_all()
+
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled_window.add(self.treeview)
+        scrolled_window.set_min_content_height(200)
+        self.add(scrolled_window)
+
+        self.__add_threads()
+        self.__set_threads_daemons()
+        self.__start_threads()
+
+
+    def __add_nodes_to_treeview(self):
         self.host_node = self.store.append(None, [self.host.get_name()] + [''] * 3 )
 
         self.cpu_node = self.store.append(self.host_node, [self.cpu.get_name()] + [''] * 3)
@@ -357,18 +381,45 @@ class MyWindow(Gtk.Window):
         self.bat_voltage_value_node = self.store.append(self.bat_voltage_node, [self.bat.get_voltage_label()] + [''] * 3) 
 
         self.bat_charge_node = self.store.append(self.bat_node, ['Charge'] + [''] * 3)
+        self.store.append(self.bat_charge_node, [''] + self.bat.get_charge_header_labels())
         self.bat_charge_value_node = self.store.append(self.bat_charge_node, [self.bat.get_charge_label()] + [''] * 3)
 
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled_window.add(self.treeview)
-        scrolled_window.set_min_content_height(200)
-        self.add(scrolled_window)
+    def __add_threads(self):
+        self.cpu_temp_thread = threading.Thread(target=self.cpu_temp_thread_callback)
+        self.cpu_freq_thread = threading.Thread(target=self.cpu_freq_thread_callback)
+        self.cpu_usage_thread = threading.Thread(target=self.cpu_usage_thread_callback)
 
-        self.cpu_t_thread = threading.Thread(target=self.update_thread_callback)
-        self.cpu_t_thread.daemon = True
-        self.cpu_t_thread.start()
+        self.gpu_freq_thread = threading.Thread(target=self.gpu_freq_thread_callback)
+        
+        self.hdd_temp_thread = threading.Thread(target=self.hdd_temp_thread_callback)
+        
+        self.bat_voltage_thread = threading.Thread(target=self.bat_voltage_thread_callback)
+        self.bat_charge_thread = threading.Thread(target=self.bat_charge_thread_callback)
+    
+    def __set_threads_daemons(self):
+        self.cpu_temp_thread.daemon = True
+        self.cpu_freq_thread.daemon = True
+        self.cpu_usage_thread.daemon = True     
+
+        self.gpu_freq_thread.daemon = True     
+
+        self.hdd_temp_thread.daemon = True
+
+        self.bat_voltage_thread.daemon = True
+        self.bat_charge_thread.daemon = True
+
+    def __start_threads(self):
+        self.cpu_temp_thread.start()
+        self.cpu_freq_thread.start()
+        self.cpu_usage_thread.start()
+
+        self.gpu_freq_thread.start()
+
+        self.hdd_temp_thread.start()
+
+        self.bat_voltage_thread.start()
+        self.bat_charge_thread.start()
 
 
     def cpu_temp_thread_callback(self):
@@ -384,6 +435,7 @@ class MyWindow(Gtk.Window):
     def cpu_usage_thread_callback(self):
         while True:
             GObject.idle_add(self.cpu_usage_update_callback)
+            time.sleep(INTERVAL)
 
 
     def gpu_freq_thread_callback(self):
@@ -411,28 +463,39 @@ class MyWindow(Gtk.Window):
 
 
     def cpu_temp_update_callback(self):
-        pass
+        cpu_temperature = self.cpu.get_temperature()
+        for i, cpu_temp_row in enumerate(zip(*cpu_temperature)):
+            self.store[self.cpu_temp_value_nodes[i]][1:] = [str(x) + ' °C' for x in cpu_temp_row]
+
 
     def cpu_freq_update_callback(self):
-        pass
+        cpu_frequency = self.cpu.get_frequency()
+        for i, cpu_freq_row in enumerate(zip(*cpu_frequency)):
+            self.store[self.cpu_freq_value_nodes[i]][1:] = [str(x) + ' MHz' for x in cpu_freq_row]
 
     def cpu_usage_update_callback(self):
-        pass
+        cpu_usage = self.cpu.get_usage()
+        for i, cpu_usage_row in enumerate(zip(*cpu_usage)):
+            self.store[self.cpu_usage_value_nodes[i]][1:] = [str(x) + ' %' for x in cpu_usage_row]
 
 
     def gpu_freq_update_callback(self):
-        pass
+        gpu_freq_row = self.gpu.get_frequency()
+        self.store[self.gpu_freq_value_node][1:] = [str(x) + ' MHz' for x in gpu_freq_row]
 
 
-    def hdd_freq_update_callback(self):
-        pass
+    def hdd_temp_update_callback(self):
+        hdd_temp_row = self.hdd.get_temperature()
+        self.store[self.hdd_temp_value_node][1:] = [str(x) + ' °C' for x in hdd_temp_row]
 
 
     def bat_voltage_update_callback(self):
-        pass
+        bat_voltage_row = self.bat.get_voltage()
+        self.store[self.bat_voltage_value_node][1:] = [str(x) + ' V' for x in bat_voltage_row]
 
     def bat_charge_update_callback(self):
-        pass
+        bat_charge_row = self.bat.get_charge()
+        self.store[self.bat_charge_value_node][1:] = [str(x) + ' mWh' for x in bat_charge_row]
 
 
 
