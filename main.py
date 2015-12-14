@@ -1,10 +1,10 @@
 import time
 import glob
 import subprocess
-import os
+import threading
 
 
-INTERVAL = 0.5
+INTERVAL = 1
 
 cpu_freq_table = []
 cpu_temp_table = []
@@ -16,30 +16,22 @@ bat_charge_row = []
 
 
 def main():
-    while 1:
-        #os.system('clear')
-        cpu_t = cpu_temperature()
-        cpu_f = cpu_frequency()
-        cpu_u = cpu_usage()
-        hdd_t = hdd_temperature()
-        gpu_f = gpu_frequency()
-        bat_v = bat_voltage()
-        bat_c = bat_charge()
-        print('-' * 80)
-        print(cpu_name_str)
-        print(cpu_t)
-        print(cpu_f)
-        print(cpu_u + '\n')
-        print('-' * 80)
-        print(gpu_name_str)
-        print(gpu_f + '\n')
-        print('-' * 80)
-        print(hdd_name_str)
-        print(hdd_t + '\n')
-        print('-' * 80)
-        print(bat_v)
-        print(bat_c)
-        time.sleep(INTERVAL)
+    cpu_t_thread = threading.Thread(target=cpu_temperature_callback)
+    cpu_f_thread = threading.Thread(target=cpu_frequency_callback)
+    cpu_u_thread = threading.Thread(target=cpu_usage_callback)
+    gpu_f_thread = threading.Thread(target=gpu_frequency_callback)
+    hdd_t_thread = threading.Thread(target=hdd_temperature_callback)
+    bat_v_thread = threading.Thread(target=bat_voltage_callback)
+    bat_c_thread = threading.Thread(target=bat_charge_callback)
+    cpu_t_thread.start()
+    cpu_f_thread.start()
+    cpu_u_thread.start()
+    gpu_f_thread.start()
+    hdd_t_thread.start()
+    bat_v_thread.start()
+    bat_c_thread.start()
+
+
 
 
 def min_row(list_1, list_2):
@@ -49,6 +41,62 @@ def min_row(list_1, list_2):
 def max_row(list_1, list_2):
     return [max(a, b) for a, b in zip(list_1, list_2)]
 
+
+# ---------------------------------------- Threads ---------------------------------------------------------
+
+def cpu_temperature_callback():
+    while True:
+        cpu_t = cpu_temperature()
+        print('-' * 80)
+        print(cpu_t)
+        time.sleep(INTERVAL)
+
+
+def cpu_frequency_callback():
+    while True:
+        cpu_f = cpu_frequency()
+        print('-' * 80)
+        print(cpu_f)
+        time.sleep(INTERVAL)
+
+
+def cpu_usage_callback():
+    while True:
+        cpu_u = cpu_usage()
+        print('-' * 80)
+        print(cpu_u)
+
+
+def gpu_frequency_callback():
+    while True:
+        gpu_f = gpu_frequency()
+        print('-' * 80)
+        print(gpu_f)
+        time.sleep(INTERVAL)
+
+
+def hdd_temperature_callback():
+    while True:
+        hdd_t = hdd_temperature()
+        print('-' * 80)
+        print(hdd_t)
+        time.sleep(INTERVAL)
+
+
+def bat_voltage_callback():
+    while True:
+        bat_v = bat_voltage()
+        print('-' * 80)
+        print(bat_v)
+        time.sleep(INTERVAL)
+
+
+def bat_charge_callback():
+    while True:
+        bat_c = bat_charge()
+        print('-' * 80)
+        print(bat_c)
+        time.sleep(INTERVAL)
 
 
 # ----------------------------------------   Indexes:   0 - Physical Id 0   --------------------------------
@@ -237,9 +285,9 @@ hdd_name_str = hdd_name()
 
 
 #TODO:
-#   1: Add Hardware info from dmidecode
+#   1: Add Hardware info (from lshw + decode-dimms   +)
 #   2: Add name for CPU, GPU to Monitor (Done + )
-#   3: Add GUI
+#   3: Add GUI(HeaderBar or Notebook + 2 boxes)
 #   4: Add Threads
 
 
