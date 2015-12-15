@@ -386,80 +386,25 @@ class MyWindow(Gtk.Window):
 
 
     def __add_threads(self):
-        self.cpu_temp_thread = threading.Thread(target=self.cpu_temp_thread_callback)
-        self.cpu_freq_thread = threading.Thread(target=self.cpu_freq_thread_callback)
-        self.cpu_usage_thread = threading.Thread(target=self.cpu_usage_thread_callback)
+        self.sensors_update_callbacks = [self.cpu_temp_update_callback, self.cpu_freq_update_callback, self.cpu_usage_update_callback, 
+        self.gpu_freq_update_callback, self.hdd_temp_update_callback, self.bat_voltage_update_callback, self.bat_charge_update_callback]
 
-        self.gpu_freq_thread = threading.Thread(target=self.gpu_freq_thread_callback)
-        
-        self.hdd_temp_thread = threading.Thread(target=self.hdd_temp_thread_callback)
-        
-        self.bat_voltage_thread = threading.Thread(target=self.bat_voltage_thread_callback)
-        self.bat_charge_thread = threading.Thread(target=self.bat_charge_thread_callback)
+        self.sensors_threads = []
+        for c in self.sensors_update_callbacks:
+            self.sensors_threads.append(threading.Thread(target=self.__thread_callback, args=[c]))
     
     def __set_threads_daemons(self):
-        self.cpu_temp_thread.daemon = True
-        self.cpu_freq_thread.daemon = True
-        self.cpu_usage_thread.daemon = True     
-
-        self.gpu_freq_thread.daemon = True     
-
-        self.hdd_temp_thread.daemon = True
-
-        self.bat_voltage_thread.daemon = True
-        self.bat_charge_thread.daemon = True
+        for t in self.sensors_threads:
+            t.daemon = True
 
     def __start_threads(self):
-        self.cpu_temp_thread.start()
-        self.cpu_freq_thread.start()
-        self.cpu_usage_thread.start()
+        for t in self.sensors_threads:
+            t.start()
 
-        self.gpu_freq_thread.start()
-
-        self.hdd_temp_thread.start()
-
-        self.bat_voltage_thread.start()
-        self.bat_charge_thread.start()
-
-
-    def cpu_temp_thread_callback(self):
+    def __thread_callback(self, update_func):
         while True:
-            GObject.idle_add(self.cpu_temp_update_callback)
+            GObject.idle_add(update_func)
             time.sleep(INTERVAL)
-
-    def cpu_freq_thread_callback(self):
-        while True:
-            GObject.idle_add(self.cpu_freq_update_callback)
-            time.sleep(INTERVAL)
-
-    def cpu_usage_thread_callback(self):
-        while True:
-            GObject.idle_add(self.cpu_usage_update_callback)
-            time.sleep(INTERVAL)
-
-
-    def gpu_freq_thread_callback(self):
-        while True:
-            GObject.idle_add(self.gpu_freq_update_callback)
-            time.sleep(INTERVAL)
-
-
-    def hdd_temp_thread_callback(self):
-        while True:
-            GObject.idle_add(self.hdd_temp_update_callback)
-            time.sleep(INTERVAL)
-
-
-    def bat_voltage_thread_callback(self):
-        while True:
-            GObject.idle_add(self.bat_voltage_update_callback)
-            time.sleep(INTERVAL)
-
-    def bat_charge_thread_callback(self):
-        while True:
-            GObject.idle_add(self.bat_charge_update_callback)
-            time.sleep(INTERVAL)
-
 
 
     def cpu_temp_update_callback(self):
