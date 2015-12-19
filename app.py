@@ -48,6 +48,8 @@ class App(gtk.Window):
         self.__fill_page_3()
         self.notebook.append_page(self.page_3, gtk.Label('About'))
 
+        gtk.rc_parse('/home/artluix/.themes/glossy_orange/gtk-2.0/gtkrc')
+
 #---------------------------------------------- PAGE 1 -------------------------------------------------------------
 
     def __fill_page_1(self):
@@ -58,7 +60,7 @@ class App(gtk.Window):
         renderer = gtk.CellRendererText()
 
         scrolled_window = gtk.ScrolledWindow()
-        scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scrolled_window.add(treeview)
         self.page_1.pack_start(scrolled_window, True, True, 0)
 
@@ -191,7 +193,7 @@ class App(gtk.Window):
         renderer = gtk.CellRendererText()
 
         scrolled_window = gtk.ScrolledWindow()
-        scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scrolled_window.add(treeview)
         self.page_2.pack_start(scrolled_window, True, True, 0)
 
@@ -259,12 +261,15 @@ class App(gtk.Window):
                             else:
                                 for v in d[k]:
                                     value_node = self.store_2.append(key_node, [str(v)])
-                        elif k in ('configuration', 'capabilities'):
+                        elif k == 'configuration':
                             key_node = self.store_2.append(parent_node, [str(k)])
                             value_dict = d[k]
                             for k_dict in value_dict:
                                 key_l_node = self.store_2.append(key_node, [str(k_dict)])
                                 self.store_2.append(key_l_node, [str(value_dict[k_dict])])
+                        elif k == 'capabilities':
+                            key_node = self.store_2.append(parent_node, [str(k)])
+                            self.store_2.append(key_node, [' '.join(str(x) for x in d[k])])
 
                 if 'children' in d:
                     for list_dict in d['children']:
