@@ -1,7 +1,7 @@
 import subprocess
 
 
-class GPU:
+class GPU(object):
 
     def __init__(self):
         self.name = self.__name()

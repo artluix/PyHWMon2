@@ -1,5 +1,5 @@
 
-class Battery:
+class Battery(object):
     def __init__(self):
         self.name = self.__name()
         self.voltage_label = 'Voltage'
@@ -10,7 +10,7 @@ class Battery:
         self.charge_row = []
 
     def get_name(self):
-        return self.name 
+        return self.name
 
 
     def get_voltage_label(self):
@@ -59,7 +59,7 @@ class Battery:
 
     def __charge(self):
         charge_filenames = ('now', 'full', 'full_design')
-        path = '/sys/class/power_supply/BAT1/charge_'  
+        path = '/sys/class/power_supply/BAT1/charge_'
         if not self.charge_row:
             for filename in charge_filenames:
                 with open(path + filename) as f:

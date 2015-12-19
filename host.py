@@ -1,5 +1,5 @@
 
-class Host:
+class Host(object):
     def __init__(self):
         self.name = self.__name()
 

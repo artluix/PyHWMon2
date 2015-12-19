@@ -3,9 +3,9 @@ import subprocess
 import time
 
 
-INTERVAL = 1
+INTERVAL = 0.5
 
-class CPU:
+class CPU(object):
 
     def __init__(self):
         self.name = self.__name()
@@ -66,7 +66,7 @@ class CPU:
         for filename in sorted(glob.glob(path)):
             with open(filename, 'r') as f:
                 temp_row.append(int(int(f.readline()) / 1000))
-        
+
         if not self.temp_table:
             self.temp_table = [temp_row] * 3
         else:

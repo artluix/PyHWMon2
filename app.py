@@ -1,8 +1,8 @@
-from gi import require_version
-require_version('Gtk', '3.0')
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-
-from gi.repository import Gtk, GObject, Pango
+import gtk, pango, gobject
+from gtk import gdk
 import threading
 import subprocess
 import time
@@ -17,13 +17,13 @@ from ssd import SSD
 from battery import Battery
 
 
-INTERVAL = 1
+INTERVAL = 0.5
 
 
-class App(Gtk.Window):
+class App(gtk.Window):
 
     def __init__(self):
-        Gtk.Window.__init__(self)
+        gtk.Window.__init__(self)
 
         self.host = Host()
         self.cpu = CPU()
@@ -31,40 +31,40 @@ class App(Gtk.Window):
         self.ssd = SSD()
         self.bat = Battery()
 
-        self.notebook = Gtk.Notebook()
+        self.notebook = gtk.Notebook()
         self.add(self.notebook)
 
-        self.page_1 = Gtk.Box()
+        self.page_1 = gtk.VBox()
         self.__fill_page_1()
-        self.notebook.append_page(self.page_1, Gtk.Label('Hardware Monitor'))
+        self.notebook.append_page(self.page_1, gtk.Label('Hardware Monitor'))
 
 
-        self.page_2 = Gtk.Box()
+        self.page_2 = gtk.VBox()
         self.__fill_page_2()
-        self.notebook.append_page(self.page_2, Gtk.Label('Hardware Info'))
+        self.notebook.append_page(self.page_2, gtk.Label('Hardware Info'))
 
 
-        self.page_3 = Gtk.Box()
+        self.page_3 = gtk.VBox()
         self.__fill_page_3()
-        self.notebook.append_page(self.page_3, Gtk.Label('About'))
+        self.notebook.append_page(self.page_3, gtk.Label('About'))
 
 #---------------------------------------------- PAGE 1 -------------------------------------------------------------
 
     def __fill_page_1(self):
-        self.store_1 = Gtk.TreeStore(str, str, str, str) 
-        treeview = Gtk.TreeView(self.store_1)
+        self.store_1 = gtk.TreeStore(str, str, str, str)
+        treeview = gtk.TreeView(self.store_1)
         treeview.set_enable_tree_lines(True)
-        treeview.modify_font(Pango.FontDescription('monaco 10'))
-        renderer = Gtk.CellRendererText()
+        treeview.modify_font(pango.FontDescription('monaco 10'))
+        renderer = gtk.CellRendererText()
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         scrolled_window.add(treeview)
         self.page_1.pack_start(scrolled_window, True, True, 0)
 
         columns = ('Sensor', 'Value', 'Min', 'Max')
         for i in range(len(columns)):
-            column = Gtk.TreeViewColumn(columns[i], renderer, text=i)
+            column = gtk.TreeViewColumn(columns[i], renderer, text=i)
             treeview.append_column(column)
 
         self.__add_nodes_to_store_1()
@@ -81,17 +81,17 @@ class App(Gtk.Window):
         cpu_node = self.store_1.append(host_node, [self.cpu.get_name()] + [''] * 3)
 
         cpu_temp_node = self.store_1.append(cpu_node, ['Temperature'] + [''] * 3)
-        self.cpu_temp_value_nodes = []     
+        self.cpu_temp_value_nodes = []
         for t_l in self.cpu.get_temp_labels():
             self.cpu_temp_value_nodes.append(self.store_1.append(cpu_temp_node, [t_l] + [''] * 3))
 
         cpu_freq_node = self.store_1.append(cpu_node, ['Frequency'] + [''] * 3)
-        self.cpu_freq_value_nodes = []     
+        self.cpu_freq_value_nodes = []
         for f_l in self.cpu.get_freq_labels():
             self.cpu_freq_value_nodes.append(self.store_1.append(cpu_freq_node, [f_l] + [''] * 3))
 
         cpu_usage_node = self.store_1.append(cpu_node, ['Usage'] + [''] * 3)
-        self.cpu_usage_value_nodes = []     
+        self.cpu_usage_value_nodes = []
         for u_l in self.cpu.get_usage_labels():
             self.cpu_usage_value_nodes.append(self.store_1.append(cpu_usage_node, [u_l] + [''] * 3))
 
@@ -108,7 +108,7 @@ class App(Gtk.Window):
         bat_node = self.store_1.append(host_node, [self.bat.get_name()] + [''] * 3)
 
         bat_voltage_node = self.store_1.append(bat_node, ['Voltage'] + [''] * 3)
-        self.bat_voltage_value_node = self.store_1.append(bat_voltage_node, [self.bat.get_voltage_label()] + [''] * 3) 
+        self.bat_voltage_value_node = self.store_1.append(bat_voltage_node, [self.bat.get_voltage_label()] + [''] * 3)
 
         bat_charge_node = self.store_1.append(bat_node, ['Charge'] + [''] * 3)
         self.store_1.append(bat_charge_node, [''] + self.bat.get_charge_header_labels())
@@ -126,9 +126,9 @@ class App(Gtk.Window):
 
     def __thread_callback(self, update_func):
         while True:
-            GObject.idle_add(update_func)
+            gobject.idle_add(update_func)
             time.sleep(INTERVAL)
-    
+
     def __set_threads_daemons(self):
         for t in self.sensors_threads:
             t.daemon = True
@@ -142,53 +142,60 @@ class App(Gtk.Window):
     def __cpu_temp_update_callback(self):
         cpu_temperature = self.cpu.get_temperature()
         for i, cpu_temp_row in enumerate(zip(*cpu_temperature)):
-            self.store_1[self.cpu_temp_value_nodes[i]][1:] = [str(x) + ' °C' for x in cpu_temp_row]
+            for j, cpu_temp_v in enumerate(cpu_temp_row):
+                self.store_1.set(self.cpu_temp_value_nodes[i], j + 1, str(cpu_temp_v) + ' °C')
 
 
     def __cpu_freq_update_callback(self):
         cpu_frequency = self.cpu.get_frequency()
         for i, cpu_freq_row in enumerate(zip(*cpu_frequency)):
-            self.store_1[self.cpu_freq_value_nodes[i]][1:] = [str(x) + ' MHz' for x in cpu_freq_row]
+            for j, cpu_freq_v in enumerate(cpu_freq_row):
+                self.store_1.set(self.cpu_freq_value_nodes[i], j + 1, str(cpu_freq_v) + ' MHz')
 
     def __cpu_usage_update_callback(self):
         cpu_usage = self.cpu.get_usage()
         for i, cpu_usage_row in enumerate(zip(*cpu_usage)):
-            self.store_1[self.cpu_usage_value_nodes[i]][1:] = [str(x) + ' %' for x in cpu_usage_row]
+            for j, cpu_usage_v in enumerate(cpu_usage_row):
+                self.store_1.set(self.cpu_usage_value_nodes[i], j + 1, str(cpu_usage_v) + ' %')
 
 
     def __gpu_freq_update_callback(self):
         gpu_freq_row = self.gpu.get_frequency()
-        self.store_1[self.gpu_freq_value_node][1:] = [str(x) + ' MHz' for x in gpu_freq_row]
+        for i, gpu_freq_v in enumerate(gpu_freq_row):
+            self.store_1.set(self.gpu_freq_value_node, i + 1, str(gpu_freq_v) + ' MHz')
 
 
     def __ssd_temp_update_callback(self):
         ssd_temp_row = self.ssd.get_temperature()
-        self.store_1[self.ssd_temp_value_node][1:] = [str(x) + ' °C' for x in ssd_temp_row]
+        for i, ssd_temp_v in enumerate(ssd_temp_row):
+            self.store_1.set(self.ssd_temp_value_node, i + 1, str(ssd_temp_v) + ' °C')
 
 
     def __bat_voltage_update_callback(self):
         bat_voltage_row = self.bat.get_voltage()
-        self.store_1[self.bat_voltage_value_node][1:] = [str(x) + ' V' for x in bat_voltage_row]
+        for i, bat_voltage_v in enumerate(bat_voltage_row):
+            self.store_1.set(self.bat_voltage_value_node, i + 1, str(bat_voltage_v) + ' V')
 
     def __bat_charge_update_callback(self):
         bat_charge_row = self.bat.get_charge()
-        self.store_1[self.bat_charge_value_node][1:] = [str(x) + ' mWh' for x in bat_charge_row]
+        for i, bat_charge_v in enumerate(bat_charge_row):
+            self.store_1.set(self.bat_charge_value_node, i + 1, str(bat_charge_v) + ' mWh')
 
 #---------------------------------------------- PAGE 2 -------------------------------------------------------------
 
     def __fill_page_2(self):
-        self.store_2 = Gtk.TreeStore(str)
-        treeview = Gtk.TreeView(self.store_2)
+        self.store_2 = gtk.TreeStore(str)
+        treeview = gtk.TreeView(self.store_2)
         treeview.set_enable_tree_lines(True)
-        treeview.modify_font(Pango.FontDescription('monaco 10'))
-        renderer = Gtk.CellRendererText()
+        treeview.modify_font(pango.FontDescription('monaco 10'))
+        renderer = gtk.CellRendererText()
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         scrolled_window.add(treeview)
         self.page_2.pack_start(scrolled_window, True, True, 0)
 
-        column = Gtk.TreeViewColumn('List Hardware', renderer, text=0)
+        column = gtk.TreeViewColumn('List Hardware', renderer, text=0)
         treeview.append_column(column)
 
         self.dimms = self.__read_dimms()
@@ -266,11 +273,11 @@ class App(Gtk.Window):
 #---------------------------------------------- PAGE 3 -------------------------------------------------------------
 
     def __fill_page_3(self):
-        textview = Gtk.TextView()
-        textview.modify_font(Pango.FontDescription('Droid Sans 14'))
+        textview = gtk.TextView()
+        textview.modify_font(pango.FontDescription('Droid Sans 14'))
         textview.set_editable(False)
         textview.set_cursor_visible(False)
-        textview.set_justification(Gtk.Justification.CENTER)
+        textview.set_justification(gtk.JUSTIFY_CENTER)
         textbuffer = textview.get_buffer()
         s = '\n\n\n\n\n\n\n\n\nThis program is brought to you by\nArtluix - Daineko Stanislau\nSt. of BSUIR of FKSiS\nof chair of Informatics\n\nBig thanks and credits to devs of:\ndecode-dimms\n lshw\n hdparm\n hddterm'
         textbuffer.set_text(s)
@@ -278,11 +285,11 @@ class App(Gtk.Window):
 
 
 def main():
-    GObject.threads_init()
+    gdk.threads_init()
     app = App()
-    app.connect('delete-event', Gtk.main_quit)
+    app.connect('delete-event', gtk.main_quit)
     app.show_all()
-    Gtk.main()
+    gtk.main()
 
 
 if __name__ == '__main__':

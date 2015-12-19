@@ -1,7 +1,7 @@
 import subprocess
 
 
-class SSD:
+class SSD(object):
 
     def __init__(self):
         self.name = self.__name()
